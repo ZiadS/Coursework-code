@@ -1,0 +1,73 @@
+import random
+
+def mod_exp(base, exp, mod):
+    return pow(base, exp, mod)
+
+def mod_inverse(a, m):
+    # Extended Euclidean Algorithm to find x and y such that a * x + m * y = gcd(a, m)
+    m0, x0, x1 = m, 0, 1
+    if m == 1:
+        return 0
+    while a > 1:
+        # q is the quotient
+        q = a // m
+        m, a = a % m, m
+        x0, x1 = x1 - q * x0, x0
+    if x1 < 0:
+        x1 += m0
+    return x1
+
+# Key Generation
+def generate_keys(p, g):
+    # Private key: a random integer x such that 1 < x < p - 1
+    x = random.randint(2, p - 2)
+    # Public key: h = g^x % p
+    h = mod_exp(g, x, p)
+    return (x, h)
+
+# Encryption
+def encrypt(p, g, h, M):
+    # Choose a random integer k such that 1 < k < p - 1
+    k = random.randint(2, p - 2)
+    
+    # Ciphertext c1 = g^k % p
+    c1 = mod_exp(g, k, p)
+    
+    # Ciphertext c2 = M * h^k % p
+    c2 = (M * mod_exp(h, k, p)) % p
+    
+    return (c1, c2)
+
+# Decryption
+def decrypt(p, x, c1, c2):
+    # Compute the shared secret s = c1^x % p
+    s = mod_exp(c1, x, p)
+    
+    # Compute the multiplicative inverse of s modulo p
+    s_inv = mod_inverse(s, p)
+    
+    # Recover the plaintext message M = c2 * s^-1 % p
+    M = (c2 * s_inv) % p
+    
+    return M
+
+# Sample Code to demonstrate Encryption and Decryption
+if __name__ == "__main__":
+    p = 7919  # A large prime number
+    g = 2     # A primitive root modulo p
+
+    # Key Generation
+    private_key, public_key = generate_keys(p, g)
+    print(f"Private Key: {private_key}")
+    print(f"Public Key: {public_key}")
+
+    # Encrypt a message
+    plaintext_message = 1234  
+    print(f"Plaintext Message: {plaintext_message}")
+    
+    c1, c2 = encrypt(p, g, public_key, plaintext_message)
+    print(f"Ciphertext (c1, c2): ({c1}, {c2})")
+
+    # Decrypt the message
+    decrypted_message = decrypt(p, private_key, c1, c2)
+    print(f"Decrypted Message: {decrypted_message}")
