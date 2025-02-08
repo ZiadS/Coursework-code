@@ -1,8 +1,5 @@
 import random
 
-def mod_exp(base, exp, mod):
-    return pow(base, exp, mod)
-
 def mod_inverse(a, m):
     # Extended Euclidean Algorithm to find x and y such that a * x + m * y = gcd(a, m)
     m0, x0, x1 = m, 0, 1
@@ -22,7 +19,7 @@ def generate_keys(p, g):
     # Private key: a random integer x such that 1 < x < p - 1
     x = random.randint(2, p - 2)
     # Public key: h = g^x % p
-    h = mod_exp(g, x, p)
+    h = pow(g, x, p)
     return (x, h)
 
 # Encryption
@@ -31,17 +28,17 @@ def encrypt(p, g, h, M):
     k = random.randint(2, p - 2)
     
     # Ciphertext c1 = g^k % p
-    c1 = mod_exp(g, k, p)
+    c1 = pow(g, k, p)
     
     # Ciphertext c2 = M * h^k % p
-    c2 = (M * mod_exp(h, k, p)) % p
+    c2 = (M * pow(h, k, p)) % p
     
     return (c1, c2)
 
 # Decryption
 def decrypt(p, x, c1, c2):
     # Compute the shared secret s = c1^x % p
-    s = mod_exp(c1, x, p)
+    s = pow(c1, x, p)
     
     # Compute the multiplicative inverse of s modulo p
     s_inv = mod_inverse(s, p)
@@ -51,23 +48,47 @@ def decrypt(p, x, c1, c2):
     
     return M
 
-# Sample Code to demonstrate Encryption and Decryption
-if __name__ == "__main__":
-    p = 7919  # A large prime number
-    g = 2     # A primitive root modulo p
+# Prime checking function
+def is_prime(p):
+    if p <= 1:
+        return False
+    for i in range(2, int(p ** 0.5) + 1):
+        if p % i == 0:
+            return False
+    return True
 
-    # Key Generation
-    private_key, public_key = generate_keys(p, g)
-    print(f"Private Key: {private_key}")
-    print(f"Public Key: {public_key}")
+def generate_prime_number():
+    p = random.randint(1000, 10000)  # Ensure p is within a proper range
+    while not is_prime(p):
+        p = random.randint(1000, 10000)  # Keep looking until we find a prime
+    return p
 
-    # Encrypt a message
-    plaintext_message = 1234  
-    print(f"Plaintext Message: {plaintext_message}")
-    
-    c1, c2 = encrypt(p, g, public_key, plaintext_message)
-    print(f"Ciphertext (c1, c2): ({c1}, {c2})")
+# Primitive root generation
+def generate_primitive_root(p):
+    for g in range(2, p):
+        powers = set()
+        for i in range(1, p):
+            powers.add(pow(g, i, p))
+        if len(powers) == p - 1:  # If there are p-1 distinct powers of g
+            return g
+    return None  # No primitive root found (shouldn't happen for most primes)
 
-    # Decrypt the message
-    decrypted_message = decrypt(p, private_key, c1, c2)
-    print(f"Decrypted Message: {decrypted_message}")
+# Main code
+p = generate_prime_number()  # A large prime number
+g = generate_primitive_root(p)  # A primitive root modulo p
+
+# Key Generation
+private_key, public_key = generate_keys(p, g)
+print(f"Private Key: {private_key}")
+print(f"Public Key: {public_key}")
+
+# Encrypt a message
+plaintext_message = int(input("Enter Integer Message: ")) 
+print(f"Plaintext Message: {plaintext_message}")
+
+c1, c2 = encrypt(p, g, public_key, plaintext_message)
+print(f"Ciphertext (c1, c2): ({c1}, {c2})")
+
+# Decrypt the message
+decrypted_message = decrypt(p, private_key, c1, c2)
+print(f"Decrypted Message: {decrypted_message}")
